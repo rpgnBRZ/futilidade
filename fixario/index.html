@@ -403,6 +403,34 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .full { grid-column: 1 / -1; }
 
+    /* Modal histórico de alterações */
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .audit-table th, .audit-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .audit-table th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .audit-table tr:hover { background: #f3f4f6; }
+    .audit-action-create { color: var(--accent); font-weight: 600; }
+    .audit-action-update { color: #2563eb; font-weight: 600; }
+    .audit-action-delete { color: var(--danger); font-weight: 600; }
+    .audit-action-import { color: #7c3aed; font-weight: 600; }
+    .audit-date { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+    .audit-user { font-size: 0.75rem; font-weight: 500; color: var(--ink); }
+    .audit-details { font-size: 0.75rem; color: var(--muted); max-width: 300px; overflow-wrap: break-word; }
+
     /* Footer */
     footer {
       padding: 20px 24px;
@@ -476,10 +504,16 @@
     <button class="btn" id="btnExport" title="Exportar todos em JSON">
       <i data-lucide="download"></i> Exportar
     </button>
+    <button class="btn" id="btnSync" title="Sincronizar dados com a nuvem">
+      <i data-lucide="refresh-cw"></i> Sincronizar
+    </button>
     <label class="btn" id="btnImportFile" for="fileImport" title="Importar JSON">
       <i data-lucide="upload"></i> Importar
     </label>
     <input type="file" id="fileImport" accept=".json" style="display:none;">
+    <button class="btn" id="btnHistorico" title="Ver histórico de alterações">
+      <i data-lucide="activity"></i> Histórico
+    </button>
     <button class="btn danger" id="btnClearAll" title="Limpar todo o mostruário">
       <i data-lucide="trash-2"></i> Limpar tudo
     </button>
@@ -612,6 +646,41 @@
       <div class="modal-footer">
         <button class="btn" id="modalCancel">Cancelar</button>
         <button class="btn primary" id="modalSave">Salvar personagem</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal histórico de alterações -->
+  <div class="modal-overlay" id="auditModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title"><i data-lucide="activity"></i> Histórico de alterações</h2>
+        <button class="modal-close" id="auditClose" title="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="overflow-x:auto;">
+          <table class="audit-table" id="auditTable">
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Personagem</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+            </tbody>
+          </table>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn" id="auditRefresh">Atualizar</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="auditCloseFooter">Fechar</button>
       </div>
     </div>
   </div>

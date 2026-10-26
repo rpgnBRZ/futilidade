@@ -47,6 +47,12 @@ const authMsg = document.getElementById('authMsg');
 const authAction = document.getElementById('authAction');
 const authFechar = document.getElementById('authFechar');
 
+// --- Histórico / Auditoria UI ---
+const auditModal = document.getElementById('auditModal');
+const auditClose = document.getElementById('auditClose');
+const auditTableBody = document.getElementById('auditTableBody');
+const auditRefresh = document.getElementById('auditRefresh');
+
 // ============================================================
 // AUTENTICAÇÃO (apenas login)
 // ============================================================
@@ -165,6 +171,53 @@ function escapeHtml(t) {
 }
 
 // ============================================================
+// AUDIT LOG — histórico de alterações no Firestore
+// ============================================================
+
+async function writeAuditLog(action, personagemId, personagemNome, dadosAntigos, dadosNovos) {
+  if (!currentUser) return;
+  try {
+    await db.collection('audit_log').add({
+      action,
+      personagemId,
+      personagemNome: personagemNome || '',
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      dadosAntigos: dadosAntigos || null,
+      dadosNovos: dadosNovos || null
+    });
+  } catch (err) {
+    console.error('Erro ao gravar log de auditoria:', err);
+  }
+}
+
+function renderAudit() {
+  if (!auditTableBody) return;
+  db.collection('audit_log')
+    .orderBy('timestamp', 'desc')
+    .limit(100)
+    .get()
+    .then(snapshot => {
+      auditTableBody.innerHTML = '';
+      snapshot.forEach(doc => {
+        const l = doc.data();
+        const date = l.timestamp ? new Date(l.timestamp.toDate ? l.timestamp.toDate() : l.timestamp).toLocaleString('pt-BR') : '';
+        const actionKey = (l.action || '').replace(/ /g, '-');
+        tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="audit-date">${escapeHtml(date)}</td>
+          <td class="audit-user">${escapeHtml(l.userEmail || l.userId || 'Desconhecido')}</td>
+          <td><span class="audit-action-${actionKey}">${escapeHtml(l.action || '')}</span></td>
+          <td>${escapeHtml(l.personagemNome || l.personagemId || '')}</td>
+          <td class="audit-details">${escapeHtml(l.dadosNovos ? 'Salvou dados' : l.dadosAntigos ? 'Excluiu personagem' : '')}</td>
+        `;
+        auditTableBody.appendChild(tr);
+      });
+    });
+}
+
+// ============================================================
 // MODAL DE EDIÇÃO / CRIAÇÃO
 // ============================================================
 
@@ -255,11 +308,23 @@ async function saveChar() {
 
   try {
     const col = colecaoPersonagens();
+    let personagemId = editingId || '';
+    let dadosAntigos = null;
     if (editingId) {
+      const doc = await col.doc(editingId).get();
+      dadosAntigos = doc.exists ? doc.data() : null;
       await col.doc(editingId).set(data, { merge: true });
     } else {
-      await col.add(data);
+      const ref = await col.add(data);
+      personagemId = ref.id;
     }
+    await writeAuditLog(
+      editingId ? 'update' : 'create',
+      personagemId,
+      data.nome,
+      dadosAntigos,
+      data
+    );
     closeModal();
   } catch (err) {
     alert('Erro ao salvar: ' + err.message);
@@ -269,7 +334,11 @@ async function saveChar() {
 async function deleteChar(id) {
   if (!confirm('Excluir este personagem?')) return;
   try {
+    const doc = await colecaoPersonagens().doc(id).get();
+    const dadosAntigos = doc.exists ? doc.data() : null;
+    const nome = dadosAntigos ? dadosAntigos.nome : '';
     await colecaoPersonagens().doc(id).delete();
+    await writeAuditLog('delete', id, nome, dadosAntigos, null);
   } catch (err) {
     alert('Erro ao excluir: ' + err.message);
   }
@@ -304,8 +373,11 @@ function importJSON(file) {
         const { id, ...rest } = item;
         batch.set(ref, rest, { merge: true });
       });
-      batch.commit().then(() => {
+      batch.commit().then(async () => {
         alert('Importação concluída.');
+        for (const item of dados) {
+          await writeAuditLog('import', item.id || '', item.nome || '', null, item);
+        }
       });
     } catch (err) {
       alert('Arquivo JSON inválido.');
@@ -316,11 +388,21 @@ function importJSON(file) {
 
 function clearAll() {
   if (!confirm('Limpar todo o mostruário? Essa ação não pode ser desfeita.')) return;
-  colecaoPersonagens().get().then(snapshot => {
+  colecaoPersonagens().get().then(async snapshot => {
     const batch = db.batch();
     snapshot.forEach(doc => batch.delete(doc.ref));
-    return batch.commit();
+    await batch.commit();
+    for (const doc of snapshot.docs) {
+      const c = doc.data();
+      await writeAuditLog('delete', doc.id, c.nome || '', c, null);
+    }
   }).catch(err => alert('Erro ao limpar: ' + err.message));
+}
+
+function syncData() {
+  // Força uma nova leitura do Firestore para sincronizar com a nuvem
+  render();
+  alert('Dados sincronizados com a nuvem.');
 }
 
 // ============================================================
@@ -329,7 +411,12 @@ function clearAll() {
 
 document.getElementById('btnAdd').addEventListener('click', () => openEdit(null));
 document.getElementById('btnExport').addEventListener('click', exportJSON);
+document.getElementById('btnSync').addEventListener('click', syncData);
 document.getElementById('btnClearAll').addEventListener('click', clearAll);
+document.getElementById('btnHistorico')?.addEventListener('click', () => {
+  renderAudit();
+  auditModal.classList.add('open');
+});
 
 // Import via input oculto
 const inputImport = document.createElement('input');
@@ -347,6 +434,13 @@ inputImport.addEventListener('change', (e) => {
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalCancel').addEventListener('click', closeModal);
 document.getElementById('modalSave').addEventListener('click', saveChar);
+
+auditClose.addEventListener('click', () => auditModal.classList.remove('open'));
+document.getElementById('auditCloseFooter').addEventListener('click', () => auditModal.classList.remove('open'));
+auditRefresh.addEventListener('click', renderAudit);
+auditModal.addEventListener('click', (e) => {
+  if (e.target === auditModal) auditModal.classList.remove('open');
+});
 
 // Foto
 mFoto.addEventListener('change', (e) => {
