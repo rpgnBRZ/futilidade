@@ -1,0 +1,77 @@
+================================================================================
+                        FICHA DE PERSONAGEM
+================================================================================
+
+NOME:
+SEXO:
+IDADE:
+ESTILO DE LUTA:
+
+================================================================================
+                           INFORMACOES ADICIONAIS
+================================================================================
+
+APELIDO:
+ORIGEM / NACIONALIDADE:
+ALTURA:
+PESO:
+OCUPACAO:
+AFILIACAO:
+
+APARIENCIA FISICA:
+
+PERSONALIDADE:
+
+HISTORICO / PASSADO:
+
+MOTIVACAO / OBJETIVO:
+
+ARMAS / EQUIPAMENTOS:
+
+TECNICAS ESPECIAIS:
+
+FRAQUEZAS:
+
+FRASES MARCANTE:
+
+================================================================================
+                            PREENCHIMENTO DE EXEMPLO
+================================================================================
+
+NOME: Kaito Hayashi
+SEXO: Masculino
+IDADE: 24 anos
+ESTILO DE LUTA: Karate Kyokushin com elementos de Jiu-Jitsu Brasileiro
+
+APELIDO: "O Furacão de Osaka"
+ORIGEM / NACIONALIDADE: Osaka, Japao
+ALTURA: 1,78 m
+PESO: 72 kg
+OCUPACAO: Lutador profissional / Estudante de educacao fisica
+AFILIACAO: Dojo Hayashi - Academia de Artes Marciais
+
+APARIENCIA FISICA: Cabelos pretos curtos, olhos castanhos, corpo atletico,
+marcacoes de treino intenso nos nos e antebraços. Costuma usar kimono branco
+com a faixa preta do karate e luvas de combate.
+
+PERSONALIDADE: Disciplinado, calmo sob pressao, respeitador dos adversarios,
+mas determinado e competitivo no tatame. Valoriza o honra e o esforço constante.
+
+HISTORICO / PASSADO: Começou a treinar karate aos 6 anos sob a orientacao do
+avô, mestre do Dojo Hayashi. Venceu varios torneios regionais no Japao antes
+de se mudar para o Brasil para aprimorar suas tecnicas de solo no Jiu-Jitsu.
+
+MOTIVACAO / OBJETIVO: Tornar-se reconhecido internacionalmente como um dos
+melhores lutadores de artes marciais mistas e honrar o legado da sua familia.
+
+ARMAS / EQUIPAMENTOS: Luvas de MMA, protetor bucal, bandagens, kimono e faixa preta.
+
+TECNICAS ESPECIAIS: Chute circular (Mawashi Geri), soco direto (Tsuki),
+quedas de judo, finalizacoes de chave de braço e mata-leão.
+
+FRAQUEZAS: Dificuldade contra oponentes muito maiores e pesados, pouca
+experiencia com ataques a longa distancia (chutes altos voadores).
+
+FRASES MARCANTE: "A vitoria pertence a quem nao desiste de treinar."
+
+================================================================================

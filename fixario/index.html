@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mostruário de Personagens de Luta</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --ink: #111827;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-hover: #0d5f5a;
+      --danger: #b91c1c;
+      --danger-hover: #991b1b;
+      --radius: 8px;
+      --focus: rgba(15, 118, 110, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header .lucide-icon { width: 20px; height: 20px; color: var(--accent); }
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: 0;
+    }
+    header .subtitle {
+      margin-left: auto;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      letter-spacing: 0;
+    }
+    .btn .lucide-icon { width: 16px; height: 16px; }
+    .btn:hover { border-color: var(--muted); background: #f9fafb; }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn.danger {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--danger);
+    }
+    .btn.danger:hover { background: #fef2f2; border-color: var(--danger); color: var(--danger-hover); }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty .lucide-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
+
+    /* Roster grid */
+    .roster {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    /* Character card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .card-photo {
+      width: 100%;
+      height: 180px;
+      background: #f3f4f6;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-photo-empty {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    .card-photo-empty .lucide-icon { width: 32px; height: 32px; opacity: 0.4; }
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+    .card-name {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+      overflow-wrap: break-word;
+    }
+    .card-style {
+      font-size: 0.8125rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin: 0;
+      overflow-wrap: break-word;
+    }
+    .card-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: 0;
+      display: flex;
+      gap: 8px;
+      overflow-wrap: break-word;
+    }
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+    }
+    .card-actions .btn { height: 30px; padding: 0 10px; font-size: 0.75rem; flex: 1; justify-content: center; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-title .lucide-icon { width: 18px; height: 18px; color: var(--accent); }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close .lucide-icon { width: 16px; height: 16px; }
+    .modal-close:hover { background: #f3f4f6; color: var(--ink); }
+    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+    }
+
+    /* Form fields inside modal */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0;
+    }
+    input, select, textarea {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.9375rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    textarea { height: 80px; resize: vertical; padding-top: 10px; padding-bottom: 10px; line-height: 1.5; }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+    input::placeholder { color: #9ca3af; }
+
+    /* Photo field in modal */
+    .photo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .photo-wrap:hover { border-color: var(--accent); background: #f0fdfa; }
+    .photo-wrap.has-photo { border-style: solid; background: var(--surface); }
+    .photo-wrap.dragover { border-color: var(--accent); background: #e0f2f1; }
+    .photo-preview {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .photo-label {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0;
+    }
+    .photo-input { display: none; }
+    .photo-remove {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--danger);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .photo-remove .lucide-icon { width: 14px; height: 14px; color: inherit; }
+    .photo-remove:hover { background: #fef2f2; border-color: var(--danger); color: var(--danger-hover); }
+
+    /* Grid helpers inside modal (2 cols) */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .full { grid-column: 1 / -1; }
+
+    /* Footer */
+    footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.8125rem;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 16px 20px; }
+      header h1 { font-size: 1.1rem; }
+      .toolbar { padding: 10px 20px; }
+      .roster { padding: 16px; grid-template-columns: 1fr; }
+      .modal { margin: 12px; max-height: 95vh; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <i data-lucide="users"></i>
+    <h1>Mostruário de Personagens de Luta</h1>
+    <div class="subtitle">Cadastre e organize lutadores</div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn primary" id="btnAdd" title="Adicionar personagem">
+      <i data-lucide="plus"></i> Novo personagem
+    </button>
+    <button class="btn" id="btnExport" title="Exportar todos em JSON">
+      <i data-lucide="download"></i> Exportar
+    </button>
+    <button class="btn" id="btnImportFile" title="Importar JSON">
+      <i data-lucide="upload"></i> Importar
+    </button>
+    <input type="file" id="fileImport" accept=".json" style="display:none;">
+    <button class="btn danger" id="btnClearAll" title="Limpar todo o mostruário">
+      <i data-lucide="trash-2"></i> Limpar tudo
+    </button>
+  </div>
+
+  <div id="emptyState" class="empty">
+    <i data-lucide="user"></i>
+    <p>Nenhum personagem cadastrado ainda.</p>
+    <p style="font-size:0.875rem;margin-top:6px;">Clique em <b>Novo personagem</b> para começar.</p>
+  </div>
+
+  <div class="roster" id="roster"></div>
+
+  <!-- Modal cadastro/edição -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle"><i data-lucide="user-plus"></i> Novo personagem</h2>
+        <button class="modal-close" id="modalClose" title="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="charId">
+
+        <div class="grid-2">
+          <div class="field">
+            <label>Nome</label>
+            <input type="text" id="mNome" placeholder="Nome do lutador" maxlength="100" required>
+          </div>
+          <div class="field">
+            <label>Sexo</label>
+            <select id="mSexo">
+              <option value="">Selecione</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Outro">Outro</option>
+              <option value="Prefiro não dizer">Prefiro não dizer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Idade</label>
+            <input type="number" id="mIdade" min="0" max="200" placeholder="Idade">
+          </div>
+          <div class="field">
+            <label>Estilo de luta</label>
+            <input type="text" id="mEstilo" placeholder="Ex: Karate, Muay Thai, MMA..." maxlength="100">
+          </div>
+          <div class="field">
+            <label>Poderes</label>
+            <input type="text" id="mPoderes" placeholder="Ex: Super força, controle de fogo..." maxlength="100">
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>Foto do personagem</label>
+          <div class="photo-wrap" id="mPhotoWrap">
+            <input type="file" id="mFoto" class="photo-input" accept="image/*">
+            <img id="mPhotoPreview" class="photo-preview" src="" alt="Foto do personagem" style="display:none;">
+            <div class="photo-label" id="mPhotoLabel">Escolher imagem</div>
+            <button type="button" class="photo-remove" id="mPhotoRemove" style="display:none;" title="Remover foto">
+              <i data-lucide="trash-2"></i> Remover
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>Apelido</label>
+            <input type="text" id="mApelido" placeholder="Apelido">
+          </div>
+          <div class="field">
+            <label>Origem / Nacionalidade</label>
+            <input type="text" id="mOrigem" placeholder="Cidade / País">
+          </div>
+          <div class="field">
+            <label>Altura</label>
+            <input type="text" id="mAltura" placeholder="Ex: 1,78 m">
+          </div>
+          <div class="field">
+            <label>Peso</label>
+            <input type="text" id="mPeso" placeholder="Ex: 72 kg">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field full">
+            <label>Aparência física</label>
+            <textarea id="mAparencia" placeholder="Descreva a aparência..."></textarea>
+          </div>
+          <div class="field full">
+            <label>Personalidade</label>
+            <textarea id="mPersonalidade" placeholder="Traços de personalidade..."></textarea>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field full">
+            <label>Histórico / Passado</label>
+            <textarea id="mHistorico" placeholder="Passado e trajetória..."></textarea>
+          </div>
+          <div class="field full">
+            <label>Motivação / Objetivo</label>
+            <textarea id="mMotivacao" placeholder="O que move o personagem?..."></textarea>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field full">
+            <label>Armas / Equipamentos</label>
+            <textarea id="mArmas" placeholder="Armas e itens..."></textarea>
+          </div>
+          <div class="field full">
+            <label>Técnicas especiais</label>
+            <textarea id="mTecnicas" placeholder="Golpes e habilidades..."></textarea>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field full">
+            <label>Fraquezas</label>
+            <textarea id="mFraquezas" placeholder="Pontos fracos..."></textarea>
+          </div>
+          <div class="field full">
+            <label>Frase marcante</label>
+            <textarea id="mFrase" placeholder="Lema ou citação..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="modalCancel">Cancelar</button>
+        <button class="btn primary" id="modalSave">Salvar personagem</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Dados salvos localmente no navegador. Exportar gera um backup JSON de todos os personagens.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
