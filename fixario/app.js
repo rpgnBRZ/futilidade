@@ -94,8 +94,7 @@ document.getElementById('btnLogout').addEventListener('click', () => {
 // ============================================================
 
 function colecaoPersonagens() {
-  if (!currentUser) return null;
-  return db.collection('usuarios').doc(currentUser.uid).collection('personagens');
+  return db.collection('personagens');
 }
 
 function render() {
