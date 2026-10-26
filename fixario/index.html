@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mostruário de Personagens de Luta</title>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --bg: #f3f4f6;
@@ -54,6 +58,29 @@
       font-size: 0.875rem;
       color: var(--muted);
     }
+    .user-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.875rem;
+      color: var(--ink);
+    }
+    .user-name { font-weight: 600; }
+    .btn-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .btn-logout .lucide-icon { width: 14px; height: 14px; }
+    .btn-logout:hover { background: #f9fafb; }
 
     /* Toolbar */
     .toolbar {
@@ -186,7 +213,53 @@
     }
     .card-actions .btn { height: 30px; padding: 0 10px; font-size: 0.75rem; flex: 1; justify-content: center; }
 
-    /* Modal */
+    /* Auth overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .auth-overlay.open { display: flex; }
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+      padding: 28px 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .auth-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      text-align: center;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Modal cadastro/edição */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -250,7 +323,7 @@
       background: #fafafa;
     }
 
-    /* Form fields inside modal */
+    /* Form fields */
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label {
       font-size: 0.8125rem;
@@ -293,7 +366,6 @@
     }
     .photo-wrap:hover { border-color: var(--accent); background: #f0fdfa; }
     .photo-wrap.has-photo { border-style: solid; background: var(--surface); }
-    .photo-wrap.dragover { border-color: var(--accent); background: #e0f2f1; }
     .photo-preview {
       width: 140px;
       height: 140px;
@@ -341,6 +413,13 @@
       text-align: center;
     }
 
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
     @media (max-width: 640px) {
       header { padding: 16px 20px; }
       header h1 { font-size: 1.1rem; }
@@ -356,26 +435,57 @@
   <header>
     <i data-lucide="users"></i>
     <h1>Mostruário de Personagens de Luta</h1>
-    <div class="subtitle">Cadastre e organize lutadores</div>
+    <div class="subtitle" id="headerSubtitle">Faça login para acessar seu mostruário</div>
+    <div class="user-bar" id="userBar" style="display:none;">
+      <span class="user-name" id="userName"></span>
+      <button class="btn-logout" id="btnLogout" title="Sair">
+        <i data-lucide="log-out"></i> Sair
+      </button>
+    </div>
   </header>
 
-  <div class="toolbar">
+  <!-- Auth overlay (login/cadastro) -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <h2 id="authTitle">Entrar</h2>
+      <div class="field" id="fieldEmail">
+        <label>E-mail</label>
+        <input type="email" id="authEmail" placeholder="seu@email.com" required>
+      </div>
+      <div class="field" id="fieldSenha">
+        <label>Senha</label>
+        <input type="password" id="authSenha" placeholder="••••••••" required>
+      </div>
+      <p id="authMsg" style="font-size:0.8125rem;color:var(--danger);margin:12px 0 0 0;min-height:1.2em;"></p>
+      <div class="modal-footer">
+        <button class="btn" id="authFechar">Fechar</button>
+        <button class="btn primary" id="authAction">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <i data-lucide="loader-2" style="width:24px;height:24px;animation:spin 1s linear infinite;"></i>
+    <p style="margin-top:8px;">Carregando seu mostruário...</p>
+  </div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
     <button class="btn primary" id="btnAdd" title="Adicionar personagem">
       <i data-lucide="plus"></i> Novo personagem
     </button>
     <button class="btn" id="btnExport" title="Exportar todos em JSON">
       <i data-lucide="download"></i> Exportar
     </button>
-    <button class="btn" id="btnImportFile" title="Importar JSON">
+    <label class="btn" id="btnImportFile" for="fileImport" title="Importar JSON">
       <i data-lucide="upload"></i> Importar
-    </button>
+    </label>
     <input type="file" id="fileImport" accept=".json" style="display:none;">
     <button class="btn danger" id="btnClearAll" title="Limpar todo o mostruário">
       <i data-lucide="trash-2"></i> Limpar tudo
     </button>
   </div>
 
-  <div id="emptyState" class="empty">
+  <div id="emptyState" class="empty" style="display:none;">
     <i data-lucide="user"></i>
     <p>Nenhum personagem cadastrado ainda.</p>
     <p style="font-size:0.875rem;margin-top:6px;">Clique em <b>Novo personagem</b> para começar.</p>
@@ -507,9 +617,10 @@
   </div>
 
   <footer>
-    Dados salvos localmente no navegador. Exportar gera um backup JSON de todos os personagens.
+    Dados salvos no Firebase (nuvem). Acesse de qualquer dispositivo com sua conta.
   </footer>
 
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
