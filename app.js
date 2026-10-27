@@ -477,10 +477,6 @@ mPhotoRemove.addEventListener('click', () => {
   applyPhoto('');
 });
 
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) closeModal();
-});
-
 // ============================================================
 // AUTH STATE OBSERVER — controla login/logout
 // ============================================================
