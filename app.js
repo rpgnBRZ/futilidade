@@ -412,7 +412,6 @@ function syncData() {
 document.getElementById('btnAdd').addEventListener('click', () => openEdit(null));
 document.getElementById('btnExport').addEventListener('click', exportJSON);
 document.getElementById('btnSync').addEventListener('click', syncData);
-document.getElementById('btnClearAll').addEventListener('click', clearAll);
 document.getElementById('btnHistorico')?.addEventListener('click', () => {
   renderAudit();
   auditModal.classList.add('open');
